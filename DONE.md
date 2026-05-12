@@ -79,3 +79,112 @@
 - إضافة إعدادات `REST_FRAMEWORK` في `core/settings.py` مع `IsAuthenticatedOrReadOnly` كصلاحية افتراضية
 
 - [x] منجزة
+
+---
+
+### TASK-002: إعداد قاعدة البيانات
+
+**الأولوية:** P1  
+**النوع:** Backend  
+**تاريخ الإنجاز:** 2026-05-12
+
+**ما تم تنفيذه:**
+- تثبيت `psycopg2-binary` في `requirements.txt`
+- إعداد متغيرات قاعدة البيانات في `.env` (`DB_ENGINE`, `DB_NAME`, `DB_USER`, `DB_PASSWORD`, `DB_HOST`, `DB_PORT`)
+- تعديل `core/settings.py` لقراءة إعدادات PostgreSQL عبر `python-decouple` بدلاً من `dj-database-url`
+- تشغيل `python manage.py migrate` بنجاح
+- التحقق من `python manage.py check --database default` بدون أخطاء
+
+**ملاحظة التنفيذ:**  
+استُخدم `python-decouple` مع متغيرات منفصلة بدلاً من `dj-database-url` + `DATABASE_URL` — كلاهما مقبول، والنهج الفعلي موثّق هنا.
+
+- [x] منجزة
+
+---
+
+## EPIC-02: الحسابات وتسجيل الدخول
+
+---
+
+### TASK-003: إنشاء نظام المستخدمين
+
+**الأولوية:** P1  
+**النوع:** Backend  
+**تاريخ الإنجاز:** 2026-05-12
+
+**ما تم تنفيذه:**
+- إنشاء `CustomUser` model في `accounts/models.py` يرث من `AbstractBaseUser + PermissionsMixin` مع تسجيل دخول بالبريد الإلكتروني
+- إنشاء `CustomUserManager` في `accounts/managers.py` يدعم `create_user` و `create_superuser`
+- تعيين `AUTH_USER_MODEL = 'accounts.CustomUser'` في `core/settings.py`
+- إضافة `rest_framework.authtoken` إلى `INSTALLED_APPS` وإعداد `TokenAuthentication`
+- إنشاء `accounts/serializers.py`: `RegisterSerializer`, `LoginSerializer`, `UserProfileSerializer`
+- إنشاء 4 API endpoints في `accounts/views.py`: register، login، logout، me
+- إنشاء `accounts/urls.py` وربطه في `core/urls.py` على `/api/auth/`
+- تسجيل `CustomUser` في Django Admin عبر `accounts/admin.py`
+- إنشاء migration: `accounts/migrations/0001_initial.py`
+
+**ملاحظة التنفيذ:**  
+قاعدة البيانات PostgreSQL تحتاج إلى إعادة تهيئة (DROP SCHEMA ثم migrate) بسبب تعارض تاريخ الـ migrations مع `AUTH_USER_MODEL` الجديد.
+
+- [x] منجزة
+
+---
+
+### TASK-004: تسجيل منشأة جديدة مع حساب مسؤول
+
+**الأولوية:** P1  
+**النوع:** Backend / API  
+**تاريخ الإنجاز:** 2026-05-12
+
+**ما تم تنفيذه:**
+- إنشاء `Business` model في `businesses/models.py` بـ `OneToOneField` إلى `CustomUser` وحقول: `name`, `business_type`, `phone`, `address`, `created_at` مع `TextChoices` لأنواع المنشآت (salon / clinic / other)
+- إنشاء `businesses/serializers.py` يحتوي على `BusinessSerializer` (قابل للإعادة في EPIC-03)
+- إضافة `BusinessRegistrationSerializer` في `accounts/serializers.py` مع `@transaction.atomic` وvalidation على تكرار البريد
+- إضافة `BusinessRegisterView` في `accounts/views.py` — يُنشئ المستخدم والمنشأة atomically ويُعيد token + user + business
+- إضافة route `POST /api/auth/register/business/` في `accounts/urls.py`
+- تسجيل `Business` في Django Admin عبر `businesses/admin.py`
+- إنشاء migration: `businesses/migrations/0001_initial.py`
+- `manage.py check` نظيف بدون أخطاء
+
+**ملاحظة التنفيذ:**  
+هذه المهمة غطّت أيضاً TASK-005 (نموذج Business) — لا حاجة لتكراره لاحقاً.  
+تشغيل `migrate` يتطلب إعادة تهيئة PostgreSQL أولاً (راجع ملاحظة TASK-003).
+
+- [x] منجزة
+
+---
+
+## EPIC-03: إدارة المنشأة
+
+---
+
+### TASK-005: إنشاء نموذج المنشأة Business
+
+**الأولوية:** P1  
+**النوع:** Backend  
+**تاريخ الإنجاز:** 2026-05-12
+
+**ملاحظة:** أُنجزت ضمن TASK-004 — راجع توثيقها أعلاه.
+
+- [x] منجزة (ضمن TASK-004)
+
+---
+
+### TASK-006: حماية بيانات كل منشأة
+
+**الأولوية:** P1  
+**النوع:** Backend / Security  
+**تاريخ الإنجاز:** 2026-05-12
+
+**ما تم تنفيذه:**
+- إنشاء `IsBusinessOwner` permission class في `businesses/permissions.py` — يُعيد `403` إن لم يكن للمستخدم منشأة
+- إنشاء `BusinessScopedMixin` في `businesses/mixins.py` — يُطبَّق على كل view إداري ويوفر `get_business()` للفلترة الآمنة
+- إنشاء `BusinessProfileView` في `businesses/views.py` — `GET/PATCH /api/businesses/me/` كأول تطبيق فعلي للمixin
+- إنشاء `businesses/urls.py` وربطه في `core/urls.py`
+- الـ `404` على الوصول العرضي مضمون تلقائياً: الـ queryset مُقيَّد بـ `filter(business=self.get_business())`
+- `manage.py check` نظيف بدون أخطاء
+
+**ملاحظة التنفيذ:**  
+هذه المهمة أنشأت البنية التحتية الأمنية — EPIC-04/05/06 ستُطبّقها بوراثة `BusinessScopedMixin` في كل view.
+
+- [x] منجزة
