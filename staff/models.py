@@ -1,6 +1,7 @@
 from django.db import models
 
 from businesses.models import Business
+from services.models import Service
 
 
 class StaffMember(models.Model):
@@ -13,6 +14,11 @@ class StaffMember(models.Model):
     email = models.EmailField(blank=True)
     phone = models.CharField(max_length=20, blank=True)
     is_active = models.BooleanField(default=True)
+    services = models.ManyToManyField(
+        Service,
+        blank=True,
+        related_name='staff_members',
+    )
 
     class Meta:
         verbose_name = 'Staff Member'
