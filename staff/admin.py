@@ -9,3 +9,4 @@ class StaffMemberAdmin(admin.ModelAdmin):
     list_filter = ('is_active', 'business')
     search_fields = ('name', 'email', 'business__name')
     list_editable = ('is_active',)
+    filter_horizontal = ('services',)
