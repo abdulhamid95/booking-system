@@ -285,3 +285,53 @@
 **الفرع:** `epic-05/staff-admin-ui`
 
 - [x] منجزة
+
+---
+
+## EPIC-06: نظام الحجوزات
+
+---
+
+### TASK-012: إنشاء نموذج الحجز Booking
+
+**الأولوية:** P1  
+**النوع:** Backend  
+**تاريخ الإنجاز:** 2026-05-14
+
+**ما تم تنفيذه:**
+- إنشاء `Booking` model في `bookings/models.py` بجميع الحقول المطلوبة: `business`, `service`, `staff_member`, `customer_name`, `customer_phone`, `customer_email`, `start_time`, `end_time`, `status`, `notes`, `created_at`
+- إضافة حقل `reference_code` فريد يُولَّد تلقائياً (UUID مختصر)
+- `end_time` يُحسب تلقائياً في `save()` من `start_time + service.duration_minutes`
+- الحالة الافتراضية `confirmed` مع خيارات: `pending / confirmed / cancelled`
+- استدعاء `clean()` من `save()` لضمان التحقق في كل عملية حفظ
+- إنشاء وتطبيق migration: `bookings/migrations/0001_initial.py`
+
+**معايير القبول المحققة:**
+- ✅ كل حجز مرتبط بمنشأة وخدمة وموظف
+- ✅ `end_time` يُحسب من `start_time` ومدة الخدمة
+- ✅ الحالة الافتراضية `confirmed`
+
+- [x] منجزة
+
+---
+
+### TASK-013: منع تداخل الحجوزات
+
+**الأولوية:** P1  
+**النوع:** Backend / Business Logic  
+**تاريخ الإنجاز:** 2026-05-14
+
+**ما تم تنفيذه:**
+- إنشاء `bookings/validators.py` يحتوي على ثلاث دوال تحقق:
+  - `validate_no_overlap()` — يرفض أي حجز يتداخل زمنياً مع حجز آخر لنفس الموظف
+  - `validate_staff_service_match()` — يتحقق أن الموظف يقدم الخدمة المطلوبة
+  - `validate_booking_business_scope()` — يتحقق أن الموظف والخدمة ينتميان لنفس المنشأة
+- جميع validators مستدعاة من `Booking.clean()` و `Booking.save()` — التحقق في Backend وليس الواجهة فقط
+- الحجوزات الملغاة (`cancelled`) مستثناة من التحقق من التداخل
+
+**معايير القبول المحققة:**
+- ✅ النظام يرفض الحجز المتداخل
+- ✅ التحقق في Backend (model layer)
+- ✅ الحجوزات الملغاة لا تمنع حجز موعد جديد
+
+- [x] منجزة
