@@ -5,8 +5,4 @@ from .models import StaffMember
 
 @admin.register(StaffMember)
 class StaffMemberAdmin(admin.ModelAdmin):
-    list_display = ('name', 'business', 'email', 'phone', 'is_active')
-    list_filter = ('is_active', 'business')
-    search_fields = ('name', 'email', 'business__name')
-    list_editable = ('is_active',)
-    filter_horizontal = ('services',)
+    pass
