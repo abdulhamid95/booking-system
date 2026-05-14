@@ -5,6 +5,12 @@ from services.models import Service
 from .models import StaffMember
 
 
+class PublicStaffSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = StaffMember
+        fields = ('id', 'name')
+
+
 class StaffMemberSerializer(serializers.ModelSerializer):
     # Write: list of service IDs; Read: list of service IDs
     services = serializers.PrimaryKeyRelatedField(

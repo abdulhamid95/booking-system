@@ -1,12 +1,13 @@
 from rest_framework import status
-from rest_framework.generics import ListCreateAPIView, RetrieveUpdateAPIView
+from rest_framework.generics import ListAPIView, ListCreateAPIView, RetrieveUpdateAPIView
+from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from businesses.mixins import BusinessScopedMixin
 
 from .models import StaffMember
-from .serializers import StaffMemberSerializer
+from .serializers import PublicStaffSerializer, StaffMemberSerializer
 
 
 class StaffListCreateView(BusinessScopedMixin, ListCreateAPIView):
@@ -37,6 +38,22 @@ class StaffDetailView(BusinessScopedMixin, RetrieveUpdateAPIView):
         return StaffMember.objects.filter(
             business=self.get_business()
         ).prefetch_related('services')
+
+
+class PublicStaffListView(ListAPIView):
+    """
+    GET /api/staff/public/<business_id>/<service_id>/
+    Public endpoint — returns active staff linked to the given service within the given business.
+    """
+    serializer_class = PublicStaffSerializer
+    permission_classes = [AllowAny]
+
+    def get_queryset(self):
+        return StaffMember.objects.filter(
+            business_id=self.kwargs['business_id'],
+            services__id=self.kwargs['service_id'],
+            is_active=True,
+        )
 
 
 class StaffToggleView(BusinessScopedMixin, APIView):

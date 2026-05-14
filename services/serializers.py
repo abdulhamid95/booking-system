@@ -12,6 +12,12 @@ class ServiceSerializer(serializers.ModelSerializer):
         )
         read_only_fields = ('id', 'created_at')
 
+
+class PublicServiceSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Service
+        fields = ('id', 'name', 'description', 'duration_minutes', 'price')
+
     def validate_duration_minutes(self, value):
         if value <= 0:
             raise serializers.ValidationError('Duration must be greater than zero.')

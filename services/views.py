@@ -1,12 +1,13 @@
 from rest_framework import status
-from rest_framework.generics import ListCreateAPIView, RetrieveUpdateAPIView
+from rest_framework.generics import ListAPIView, ListCreateAPIView, RetrieveUpdateAPIView
+from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from businesses.mixins import BusinessScopedMixin
 
 from .models import Service
-from .serializers import ServiceSerializer
+from .serializers import PublicServiceSerializer, ServiceSerializer
 
 
 class ServiceListCreateView(BusinessScopedMixin, ListCreateAPIView):
@@ -33,6 +34,21 @@ class ServiceDetailView(BusinessScopedMixin, RetrieveUpdateAPIView):
 
     def get_queryset(self):
         return Service.objects.filter(business=self.get_business())
+
+
+class PublicServiceListView(ListAPIView):
+    """
+    GET /api/services/public/<business_id>/
+    Public endpoint — returns active services for the given business.
+    """
+    serializer_class = PublicServiceSerializer
+    permission_classes = [AllowAny]
+
+    def get_queryset(self):
+        return Service.objects.filter(
+            business_id=self.kwargs['business_id'],
+            is_active=True,
+        )
 
 
 class ServiceToggleView(BusinessScopedMixin, APIView):
