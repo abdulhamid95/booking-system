@@ -3,6 +3,7 @@ from rest_framework.generics import ListAPIView, ListCreateAPIView, RetrieveUpda
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from drf_spectacular.utils import extend_schema, extend_schema_view
 
 from businesses.mixins import BusinessScopedMixin
 
@@ -10,6 +11,10 @@ from .models import StaffMember
 from .serializers import PublicStaffSerializer, StaffMemberSerializer
 
 
+@extend_schema_view(
+    get=extend_schema(tags=['staff'], summary='List all staff members for the authenticated business'),
+    post=extend_schema(tags=['staff'], summary='Add a new staff member'),
+)
 class StaffListCreateView(BusinessScopedMixin, ListCreateAPIView):
     """
     GET  /api/staff/   — list all staff members for the authenticated business
@@ -26,6 +31,10 @@ class StaffListCreateView(BusinessScopedMixin, ListCreateAPIView):
         serializer.save(business=self.get_business())
 
 
+@extend_schema_view(
+    get=extend_schema(tags=['staff'], summary='Retrieve a staff member'),
+    patch=extend_schema(tags=['staff'], summary='Update a staff member'),
+)
 class StaffDetailView(BusinessScopedMixin, RetrieveUpdateAPIView):
     """
     GET   /api/staff/<id>/  — retrieve a staff member
@@ -40,6 +49,9 @@ class StaffDetailView(BusinessScopedMixin, RetrieveUpdateAPIView):
         ).prefetch_related('services')
 
 
+@extend_schema_view(
+    get=extend_schema(tags=['staff'], summary='List active staff for a service within a business (public)'),
+)
 class PublicStaffListView(ListAPIView):
     """
     GET /api/staff/public/<business_id>/<service_id>/
@@ -67,6 +79,13 @@ class StaffToggleView(BusinessScopedMixin, APIView):
             pk=pk, business=self.get_business()
         ).first()
 
+    @extend_schema(
+        operation_id='staff_toggle',
+        request=None,
+        responses={200: StaffMemberSerializer},
+        tags=['staff'],
+        summary='Activate or deactivate a staff member',
+    )
     def post(self, request, pk, action):
         member = self._get_staff(pk)
         if member is None:

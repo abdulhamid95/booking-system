@@ -3,6 +3,7 @@ from rest_framework.generics import ListAPIView, ListCreateAPIView, RetrieveUpda
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from drf_spectacular.utils import extend_schema, extend_schema_view
 
 from businesses.mixins import BusinessScopedMixin
 
@@ -10,6 +11,10 @@ from .models import Service
 from .serializers import PublicServiceSerializer, ServiceSerializer
 
 
+@extend_schema_view(
+    get=extend_schema(tags=['services'], summary='List all services for the authenticated business'),
+    post=extend_schema(tags=['services'], summary='Create a new service'),
+)
 class ServiceListCreateView(BusinessScopedMixin, ListCreateAPIView):
     """
     GET  /api/services/        — list all services for the authenticated business
@@ -24,6 +29,10 @@ class ServiceListCreateView(BusinessScopedMixin, ListCreateAPIView):
         serializer.save(business=self.get_business())
 
 
+@extend_schema_view(
+    get=extend_schema(tags=['services'], summary='Retrieve a single service'),
+    patch=extend_schema(tags=['services'], summary='Update a service'),
+)
 class ServiceDetailView(BusinessScopedMixin, RetrieveUpdateAPIView):
     """
     GET   /api/services/<id>/  — retrieve a single service
@@ -36,6 +45,9 @@ class ServiceDetailView(BusinessScopedMixin, RetrieveUpdateAPIView):
         return Service.objects.filter(business=self.get_business())
 
 
+@extend_schema_view(
+    get=extend_schema(tags=['services'], summary='List active services for a business (public)'),
+)
 class PublicServiceListView(ListAPIView):
     """
     GET /api/services/public/<business_id>/
@@ -62,6 +74,13 @@ class ServiceToggleView(BusinessScopedMixin, APIView):
             pk=pk, business=self.get_business()
         ).first()
 
+    @extend_schema(
+        operation_id='services_toggle',
+        request=None,
+        responses={200: ServiceSerializer},
+        tags=['services'],
+        summary='Activate or deactivate a service',
+    )
     def post(self, request, pk, action):
         service = self._get_service(pk)
         if service is None:
